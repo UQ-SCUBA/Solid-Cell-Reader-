@@ -1,0 +1,17 @@
+
+Custom PCB with
+STM32G051F8P6 as a MCU
+pin 1 PB7,8: usart1 RX
+pin 20 PB3,4,5,6 : usart1 TX
+pin 19 PA14,15 : sys_SWCLK
+pin 18 PA13 : sys_SWDIO
+Pin 9  PA0 : optional external wake pin (WKUP1), pulled high to wake
+pin 10 PA1 : cell MOSFET switch, active low (pulled low = cell on)
+pin 11 PA4 : DAC out
+
+reading a FD02 cell from pyro science via mcu UART1
+
+voltage divider on pin 11 uses R1==20k, R2==1k (was 33k/1k — changed to allow
+higher output, ~2.6 bar pO2 equivalent)
+
+No LEDs on this revision of the board.

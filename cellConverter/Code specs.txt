@@ -1,0 +1,15 @@
+Project goal 
+Code a state machine that will take the data from a FDO2 solid state cell and convert it to mimic a PSR-11-39-MD oxygen cell to allow it to be retrofitted to a rebreather. initial test will be to confirm the mcu works then write the code in several stages to ensure each section works before moving to the next
+
+Stage 1 
+download all needed dependencies to code the stm in VS 
+Write a hello world sketch that blinks the light(s) on the pcb and setup the pin outs
+Stage 2 
+remove the hello world code and write new code that will poll the FDO2 for its data every 300ms and write it to the sys port back via the st-link programmer
+stage 3 
+write additional code to take the detected f02 from the sensor and write it to the DAC via a voltage divider (R1 33k, R2 1k) so that it mimics a PSR-11-39-MD oxygen cell output 
+stage 4 
+write code to include the lights built into the PCB for simple diagnostic cell reading and fault
+stage 5 
+write code to put the board in sleep mode in-between cell polling to save power but still keep the DAC active 
+  

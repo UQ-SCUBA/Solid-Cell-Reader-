@@ -1,0 +1,27 @@
+{
+  "build": {
+    "core": "stm32",
+    "cpu": "cortex-m0plus",
+    "extra_flags": "-DSTM32G0xx -DSTM32G051xx",
+    "f_cpu": "16000000L",
+    "mcu": "stm32g051f8px",
+    "product_line": "STM32G051xx"
+  },
+  "debug": {
+    "default_tools": ["stlink"],
+    "jlink_device": "STM32G051F8",
+    "onboard_tools": ["stlink"],
+    "openocd_target": "stm32g0x",
+    "svd_path": "STM32G051.svd"
+  },
+  "frameworks": ["stm32cube"],
+  "name": "STM32G051F8P6 Custom Board",
+  "upload": {
+    "maximum_ram_size": 32768,
+    "maximum_size": 65536,
+    "protocol": "stlink",
+    "protocols": ["stlink", "cmsis-dap", "jlink", "blackmagic"]
+  },
+  "url": "https://www.st.com",
+  "vendor": "Custom"
+}
