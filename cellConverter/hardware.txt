@@ -1,8 +1,8 @@
 
 Custom PCB with
 STM32G051F8P6 as a MCU
-pin 1 PB7,8: usart1 RX
-pin 20 PB3,4,5,6 : usart1 TX
+pin 16 PA10,12: usart1 RX (PA10 remapped onto same physical pin as PA12 on this package)
+pin 17 PA9,11: usart1 TX (PA9 remapped onto same physical pin as PA11 on this package)
 pin 19 PA14,15 : sys_SWCLK
 pin 18 PA13 : sys_SWDIO
 Pin 9  PA0 : optional external wake pin (WKUP1), pulled high to wake

@@ -30,10 +30,16 @@
 #define DEBUG_PORT       GPIOA
 #define DEBUG_BAUD       115200
 
-/* USART1 — FDO2 sensor: PB6=TX, PB7=RX, AF0 */
-#define FDO2_TX_PIN      GPIO_PIN_6
-#define FDO2_RX_PIN      GPIO_PIN_7
-#define FDO2_PORT        GPIOB
+/*
+ * USART1 — FDO2 sensor: AF1 uses logical PA9=TX and PA10=RX.  On the
+ * STM32G051F8P6, the PCB brings these functions out on package pads PA11
+ * (pin 17) and PA12 (pin 16).  Enabling the SYSCFG remap below makes those
+ * pads behave as PA9 and PA10 respectively. USART1's TX/RX swap is enabled
+ * to match the current board wiring: pad 16 is TX and pad 17 is RX.
+ */
+#define FDO2_TX_PIN      GPIO_PIN_9
+#define FDO2_RX_PIN      GPIO_PIN_10
+#define FDO2_PORT        GPIOA
 #define FDO2_BAUD        19200
 
 /* DAC — PA4 = DAC1_OUT1 */
@@ -76,6 +82,7 @@
 #define PPO2_MAX_HPA     2600U    /* 2.6 bar expressed in hPa */
 #define COMM_HOLD_CYCLES 3U
 #define VCC_MIN_MV       3250U    /* 3.25 V minimum supply */
+#define ENABLE_VCC_CHECK  1U       /* undervoltage lockout: DAC forced to 0 below VCC_MIN_MV */
 
 /*
  * Auto-shutdown (optional) — PA0 / WKUP1
@@ -397,6 +404,10 @@ static uint32_t ReadVCC_mV(void)
  */
 static int CheckVCC(void)
 {
+#if !ENABLE_VCC_CHECK
+    /* Deliberately bypassed during bench testing; retain the code for service. */
+    return 1;
+#else
     uint32_t vcc = ReadVCC_mV();
 
     if (vcc >= VCC_MIN_MV)
@@ -406,6 +417,7 @@ static int CheckVCC(void)
     consec_comm_fails = 0;
     HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 0);
     return 0;
+#endif
 }
 
 static void POST_DacSweep(void)
@@ -637,14 +649,20 @@ static void MX_USART1_Init(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_USART1_CLK_ENABLE();
+    __HAL_RCC_SYSCFG_CLK_ENABLE();
 
+    /* Route logical PA9/PA10 onto the PA11/PA12 package pads used by the PCB. */
+    HAL_SYSCFG_EnableRemap(SYSCFG_REMAP_PA11 | SYSCFG_REMAP_PA12);
+
+    /* Configure logical PA9/PA10; the SYSCFG remap above directs them to
+     * physical pads PA11/PA12 on this 20-pin package. */
     GPIO_InitStruct.Pin       = FDO2_TX_PIN | FDO2_RX_PIN;
     GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull      = GPIO_NOPULL;   /* pull-up handled on PCB */
     GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF0_USART1;
+    GPIO_InitStruct.Alternate = GPIO_AF1_USART1;
     HAL_GPIO_Init(FDO2_PORT, &GPIO_InitStruct);
 
     huart1.Instance          = USART1;
@@ -655,6 +673,17 @@ static void MX_USART1_Init(void)
     huart1.Init.Mode         = UART_MODE_TX_RX;
     huart1.Init.HwFlowCtl    = UART_HWCONTROL_NONE;
     huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+    /*
+     * USART1 normally maps TX to PA9/pad 17 and RX to PA10/pad 16. Swap the
+     * peripheral signals so the FDO2 link uses pad 16 as TX and pad 17 as RX.
+     * CR2.SWAP can only be written while the USART is disabled (UE=0), so it
+     * must go through AdvancedInit here -- HAL_UART_Init() applies it before
+     * enabling the peripheral. A plain SET_BIT(USART1->CR2, ...) done after
+     * HAL_UART_Init() returns is silently ignored by the hardware because UE
+     * is already 1 by then.
+     */
+    huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_SWAP_INIT;
+    huart1.AdvancedInit.Swap           = UART_ADVFEATURE_SWAP_ENABLE;
     if (HAL_UART_Init(&huart1) != HAL_OK)
         Fatal_Init_Fault();
 }
